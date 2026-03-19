@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>ProTrack Smart Dashboard</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+body{
+  margin:0;
+  font-family:Arial, sans-serif;
+  background:#0f172a;
+  color:white;
+}
+
+header {
+  background: #020617;
+  padding: 15px 25px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header-buttons {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.link-btn, button {
+  background: #6366f1;
+  border: none;
+  padding: 8px 15px;
+  color: white;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  text-decoration:none;
+  transition:0.3s;
+}
+
+button:hover, .link-btn:hover {
+  background: #4f46e5;
+}
+
+.container{
+  max-width:1000px;
+  margin:30px auto;
+  padding:20px;
+}
+
+/* ===== FORM ===== */
+
+.form-box{
+  background:#020617;
+  padding:20px;
+  border-radius:10px;
+  margin-bottom:30px;
+}
+
+.form-box input{
+  width:100%;
+  padding:10px;
+  margin:8px 0;
+  border:none;
+  border-radius:6px;
+}
+
+/* ===== CHART SECTION ===== */
+
+.chart-wrapper {
+  display:flex;
+  justify-content:center;
+  gap:50px;
+  margin:25px 0;
+  flex-wrap:wrap;
+}
+
+.chart-box {
+  width:220px;
+  height:220px;
+  background:#020617;
+  padding:15px;
+  border-radius:12px;
+}
+
+/* ===== TASKS ===== */
+
+.task{
+  background:#020617;
+  padding:15px;
+  margin-bottom:10px;
+  border-radius:6px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+.done{
+  opacity:0.5;
+  text-decoration:line-through;
+}
+
+.task span{
+  display:block;
+  font-size:14px;
+  color:#9ca3af;
+}
+
+.open-btn{
+  display:inline-block;
+  margin-top:5px;
+  padding:5px 10px;
+  background:#2563eb;
+  color:white;
+  text-decoration:none;
+  border-radius:5px;
+  font-size:12px;
+}
+
+.open-btn:hover{
+  background:#1e40af;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <h2 id="welcome">Welcome</h2>
+  <div class="header-buttons">
+    <a href="feedback.html" class="link-btn">Feedback</a>
+    <button onclick="logout()">Logout</button>
+  </div>
+</header>
+
+<div class="container">
+
+<!-- ADD FORM -->
+
+<div class="form-box">
+  <h3>Add Smart Task</h3>
+  <input type="text" id="title" placeholder="Task Title">
+  <input type="text" id="url" placeholder="Paste Link">
+  <input type="date" id="deadline">
+  <button onclick="addTask()">Analyze & Add</button>
+</div>
+
+<h3>Dashboard Analytics</h3>
+
+<div class="chart-wrapper">
+  <div class="chart-box">
+    <canvas id="categoryChart"></canvas>
+  </div>
+
+  <div class="chart-box">
+    <canvas id="statusChart"></canvas>
+  </div>
+</div>
+
+<hr>
+<h3>Your Tasks</h3>
+<div id="taskList"></div>
+
+</div>
+
+<script>
+
+/* ================= CONFIG ================= */
+
+const API_URL = "https://mzp2felt63omg6v6mpyyqxmbx40uambn.lambda-url.ap-south-1.on.aws";
+const ANALYZER_URL = "https://ulk66wwpvii4vlt3evus6a7dpm0zhiou.lambda-url.ap-south-1.on.aws/";
+
+const user = JSON.parse(localStorage.getItem("user"));
+if(!user){ window.location="login.html"; }
+
+const USER_ID = user.email;
+
+/* ================= GREETING ================= */
+
+function setGreeting(){
+  const hour = new Date().getHours();
+  let greet="Hello";
+  if(hour<12) greet="Good Morning";
+  else if(hour<17) greet="Good Afternoon";
+  else greet="Good Evening";
+
+  document.getElementById("welcome").innerText =
+    greet + ", " + user.name + " 👋";
+}
+setGreeting();
+
+/* ================= LOGOUT ================= */
+
+function logout(){
+  localStorage.clear();
+  window.location="login.html";
+}
+
+/* ================= CHARTS ================= */
+
+let categoryChart;
+let statusChart;
+
+function drawCharts(tasks){
+
+  const categoryCount = {};
+  tasks.forEach(t=>{
+    const cat = t.category || "Other";
+    categoryCount[cat] = (categoryCount[cat] || 0) + 1;
+  });
+
+  const catLabels = Object.keys(categoryCount);
+  const catData = Object.values(categoryCount);
+
+  let done=0, progress=0;
+  tasks.forEach(t=>{
+    if(t.status==="done") done++;
+    else progress++;
+  });
+
+  if(categoryChart) categoryChart.destroy();
+  if(statusChart) statusChart.destroy();
+
+  categoryChart = new Chart(
+    document.getElementById("categoryChart"),
+    {
+      type:"pie",
+      data:{
+        labels:catLabels,
+        datasets:[{
+          data:catData,
+          backgroundColor:["#6366f1","#22c55e","#f59e0b","#ef4444","#3b82f6"]
+        }]
+      },
+      options:{
+        responsive:true,
+        maintainAspectRatio:false
+      }
+    }
+  );
+
+  statusChart = new Chart(
+    document.getElementById("statusChart"),
+    {
+      type:"doughnut",
+      data:{
+        labels:["Completed","In Progress"],
+        datasets:[{
+          data:[done,progress],
+          backgroundColor:["#22c55e","#6366f1"]
+        }]
+      },
+      options:{
+        responsive:true,
+        maintainAspectRatio:false
+      }
+    }
+  );
+}
+
+async function addTask(){
+
+  const title = document.getElementById("title").value.trim();
+  const link = document.getElementById("url").value.trim();
+  const deadline = document.getElementById("deadline").value;
+
+  if(!title || !link){
+    alert("Fill all fields");
+    return;
+  }
+
+  try{
+
+    const analyzeRes = await fetch(ANALYZER_URL,{
+      method:"POST",
+      headers:{
+        "Content-Type":"application/json"
+      },
+      body:JSON.stringify({
+        userId: USER_ID,
+        link: link,
+        title: title
+      })
+    });
+
+    const analyzeData = await analyzeRes.json();
+
+    const { category, subCategory, source } =
+      analyzeData.data;
+
+    await fetch(API_URL + "/tasks",{
+      method:"POST",
+      headers:{
+        "Content-Type":"application/json"
+      },
+      body:JSON.stringify({
+        userId: USER_ID,
+        title,
+        url: link,
+        category,
+        subCategory,
+        source,
+        deadline
+      })
+    });
+
+    document.getElementById("title").value="";
+    document.getElementById("url").value="";
+    document.getElementById("deadline").value="";
+
+    loadTasks();
+
+  }catch(err){
+    console.error(err);
+    alert("Add Task Failed");
+  }
+}
+
+async function toggleStatus(id,status){
+
+  let newStatus =
+    status === "done" ? "progress" : "done";
+
+  await fetch(API_URL + "/tasks",{
+    method:"PUT",
+    headers:{
+      "Content-Type":"application/json"
+    },
+    body:JSON.stringify({
+      userId: USER_ID,
+      taskId: id,
+      status: newStatus
+    })
+  });
+
+  loadTasks();
+}
+
+async function deleteTask(id){
+
+  if(!confirm("Delete this task?")) return;
+
+  await fetch(API_URL + "/tasks",{
+    method:"DELETE",
+    headers:{
+      "Content-Type":"application/json"
+    },
+    body:JSON.stringify({
+      userId: USER_ID,
+      taskId: id
+    })
+  });
+
+  loadTasks();
+}
+/* ================= LOAD TASKS ================= */
+
+async function loadTasks(){
+  const res = await fetch(API_URL + "/tasks?userId=" + USER_ID);
+  const data = await res.json();
+  renderTasks(data);
+  drawCharts(data);
+}
+
+/* ================= RENDER ================= */
+
+function renderTasks(tasks){
+  const box = document.getElementById("taskList");
+  box.innerHTML="";
+  if(tasks.length===0){
+    box.innerHTML="<p>No tasks yet 🚀</p>";
+    return;
+  }
+
+  tasks.forEach(t=>{
+    const div=document.createElement("div");
+    div.className="task";
+    if(t.status==="done") div.classList.add("done");
+
+    div.innerHTML=`
+      <div>
+        <b>${t.title}</b>
+        <span>${t.category} → ${t.subCategory}</span>
+        <span>Deadline: ${t.deadline || "Not Set"}</span>
+        ${t.url ? `<a href="${t.url}" target="_blank" class="open-btn">Open Link</a>` : ""}
+      </div>
+      <div>
+        <button onclick="toggleStatus('${t.taskId}','${t.status}')">
+          ${t.status==="done"?"Undo":"Done"}
+        </button>
+        <button onclick="deleteTask('${t.taskId}')">Delete</button>
+      </div>
+    `;
+    box.appendChild(div);
+  });
+}
+
+/* ================= START ================= */
+loadTasks();
+
+</script>
+
+</body>
+</html>
+
+
+
+

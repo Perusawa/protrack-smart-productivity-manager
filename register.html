@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Register - ProTrack</title>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+
+<body>
+
+<nav class="navbar">
+<h2>ProTrack</h2>
+<div class="nav-links">
+<a href="index.html">Home</a>
+<a href="about.html">About</a>
+<a href="contact.html">Contact</a>
+<a href="feedback.html">Feedback</a>
+<a href="login.html">Login</a>
+</div>
+</nav>
+
+<header>ProTrack Registration</header>
+
+<div class="center-box">
+<h2 align="center">Create Account</h2><br>
+
+<input type="text" id="name" placeholder="Full Name">
+<input type="email" id="email" placeholder="Email (example: ram.123@gmail.com)">
+
+<div class="pass-box">
+<input type="password" id="pass" placeholder="Password">
+<span onclick="togglePass('pass', this)" class="eye">
+<i class="fa-solid fa-eye"></i>
+</span>
+</div>
+
+<div class="pass-box">
+<input type="password" id="cpass" placeholder="Confirm Password">
+<span onclick="togglePass('cpass', this)" class="eye">
+<i class="fa-solid fa-eye"></i>
+</span>
+</div>
+
+<button onclick="reg()">Register</button>
+
+<br><br>
+<p align="center">
+Already registered? <a href="login.html">Login</a>
+</p>
+
+</div>
+
+<script>
+
+const API_URL = "https://mzp2felt63omg6v6mpyyqxmbx40uambn.lambda-url.ap-south-1.on.aws";
+
+/* ================= EMAIL VALIDATION ================= */
+function validateEmail(email) {
+email = email.trim().toLowerCase();
+const pattern = /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/;
+return pattern.test(email);
+}
+
+/* Auto lowercase while typing */
+document.getElementById("email").addEventListener("input", function () {
+this.value = this.value.toLowerCase();
+});
+
+/* ================= STRONG PASSWORD ================= */
+function validatePassword(password){
+const strongPass = /^(?=.*[A-Z])(?=.*[0-9])(?=.*[@#₹&/]).{6,}$/;
+return strongPass.test(password);
+}
+
+/* ================= REGISTER ================= */
+async function reg(){
+
+let name = document.getElementById("name").value.trim();
+let email = document.getElementById("email").value.trim().toLowerCase();
+let pass = document.getElementById("pass").value;
+let cpass = document.getElementById("cpass").value;
+
+if(!name || !email || !pass || !cpass){
+alert("Fill all fields");
+return;
+}
+
+if(!validateEmail(email)){
+alert("Enter valid email (example: ram.123@gmail.com)");
+return;
+}
+
+if(pass !== cpass){
+alert("Passwords do not match");
+return;
+}
+
+if(!validatePassword(pass)){
+alert("Password must contain:\n- One uppercase letter\n- One number\n- One special character (@#₹&/)\n- Minimum 6 characters");
+return;
+}
+
+try{
+const res = await fetch(API_URL + "/register",{
+method:"POST",
+headers:{ "Content-Type":"application/json" },
+body: JSON.stringify({ name, email, password: pass })
+});
+
+const data = await res.json();
+
+if(res.ok){
+alert("Registration Successful! Please check email for SNS subscription confirmation.");
+window.location = "login.html";
+}else{
+alert(data.error || "Registration Failed");
+}
+
+}catch(err){
+console.error(err);
+alert("Server error");
+}
+}
+
+/* ================= TOGGLE PASSWORD ================= */
+function togglePass(id, el){
+const input = document.getElementById(id);
+const icon = el.querySelector("i");
+
+if(input.type === "password"){
+input.type = "text";
+icon.className = "fa-solid fa-eye-slash";
+}else{
+input.type = "password";
+icon.className = "fa-solid fa-eye";
+}
+}
+
+</script>
+
+</body>
+</html>
+
+
+

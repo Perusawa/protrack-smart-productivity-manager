@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Login - ProTrack</title>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+
+<body>
+
+<nav class="navbar">
+<h2>ProTrack</h2>
+<div class="nav-links">
+<a href="index.html">Home</a>
+<a href="about.html">About</a>
+<a href="contact.html">Contact</a>
+<a href="feedback.html">Feedback</a>
+<a href="login.html">Login</a>
+</div>
+</nav>
+
+<header>ProTrack Login</header>
+
+<div class="center-box">
+<h2 align="center">Login</h2><br>
+
+<input type="email" id="email" placeholder="Email">
+
+<div class="pass-box">
+<input type="password" id="pass" placeholder="Password">
+<span onclick="togglePass(this)" class="eye">
+<i class="fa-solid fa-eye"></i>
+</span>
+</div>
+
+<button onclick="login()">Login</button>
+
+<br><br>
+<p align="center">
+New user? <a href="register.html">Register</a>
+</p>
+
+</div>
+
+<script>
+
+const API_URL = "https://mzp2felt63omg6v6mpyyqxmbx40uambn.lambda-url.ap-south-1.on.aws";
+
+/* ================= EMAIL VALIDATION ================= */
+function validateEmail(email) {
+email = email.trim().toLowerCase();
+const pattern = /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/;
+return pattern.test(email);
+}
+
+/* Auto lowercase while typing */
+document.getElementById("email").addEventListener("input", function () {
+this.value = this.value.toLowerCase();
+});
+
+/* ================= LOGIN ================= */
+async function login(){
+
+let email = document.getElementById("email").value.trim().toLowerCase();
+let pass = document.getElementById("pass").value;
+
+if(!email || !pass){
+alert("Fill all fields");
+return;
+}
+
+if(!validateEmail(email)){
+alert("Enter valid email format");
+return;
+}
+
+try{
+const res = await fetch(API_URL + "/login",{
+method:"POST",
+headers:{ "Content-Type":"application/json" },
+body: JSON.stringify({ email, password: pass })
+});
+
+const data = await res.json();
+
+if(data.message === "Login success"){
+localStorage.setItem("user", JSON.stringify(data.user));
+localStorage.setItem("logged","yes");
+alert("Login Successful");
+window.location = "dashboard.html";
+}else{
+alert(data.error || "Invalid credentials");
+}
+
+}catch(err){
+console.error(err);
+alert("Server error");
+}
+}
+
+/* ================= TOGGLE PASSWORD ================= */
+function togglePass(el){
+const input = document.getElementById("pass");
+const icon = el.querySelector("i");
+
+if(input.type === "password"){
+input.type = "text";
+icon.className = "fa-solid fa-eye-slash";
+}else{
+input.type = "password";
+icon.className = "fa-solid fa-eye";
+}
+}
+
+</script>
+
+</body>
+</html>
+
+
+

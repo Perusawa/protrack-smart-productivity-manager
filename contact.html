@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Contact - ProTrack</title>
+<link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<nav class="navbar">
+  <h2>ProTrack</h2>
+  <div class="nav-links">
+    <a href="index.html">Home</a>
+    <a href="about.html">About</a>
+    <a href="contact.html">Contact</a>
+    <a href="feedback.html">Feedback</a>
+  </div>
+</nav>
+
+<div class="center-box">
+
+<h2>Contact Us</h2>
+
+<input type="text" id="name" placeholder="Your Name">
+<input type="email" id="email" placeholder="Your Email">
+<textarea id="message" placeholder="Your Message"></textarea>
+
+<button onclick="sendContact()">Send Message</button>
+
+</div>
+
+<script>
+
+const API = "https://6sqf5enicwv3sga6d6gwl77y5a0qgvec.lambda-url.ap-south-1.on.aws/";
+
+async function sendContact(){
+
+  const name = document.getElementById("name").value;
+  const email = document.getElementById("email").value;
+  const message = document.getElementById("message").value;
+
+  if(!name || !email || !message){
+    alert("Please fill all fields");
+    return;
+  }
+
+  try {
+
+    const response = await fetch(API,{
+      method:"POST",
+      headers:{
+        "Content-Type":"application/json"
+      },
+      body:JSON.stringify({
+        type:"contact",
+        name:name,
+        email:email,
+        message:message
+      })
+    });
+
+    const data = await response.json();
+    alert(data.message || "Message Sent!");
+
+  } catch(error){
+    alert("Error sending message");
+  }
+
+}
+
+</script>
+
+</body>
+</html>

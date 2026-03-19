@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Feedback - ProTrack</title>
+<link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<nav class="navbar">
+  <h2>ProTrack</h2>
+  <div class="nav-links">
+    <a href="index.html">Home</a>
+    <a href="about.html">About</a>
+    <a href="contact.html">Contact</a>
+    <a href="feedback.html">Feedback</a>
+  </div>
+</nav>
+
+<div class="center-box">
+
+<h2>Feedback</h2>
+
+<input type="text" id="name" placeholder="Your Name">
+<textarea id="feedback" placeholder="Your Feedback"></textarea>
+
+<button onclick="sendFeedback()">Submit Feedback</button>
+
+</div>
+
+<script>
+
+const API = "https://6sqf5enicwv3sga6d6gwl77y5a0qgvec.lambda-url.ap-south-1.on.aws/";
+
+async function sendFeedback(){
+
+  const name = document.getElementById("name").value;
+  const feedback = document.getElementById("feedback").value;
+
+  if(!name || !feedback){
+    alert("Please fill all fields");
+    return;
+  }
+
+  try {
+
+    const response = await fetch(API,{
+      method:"POST",
+      headers:{
+        "Content-Type":"application/json"
+      },
+      body:JSON.stringify({
+        type:"feedback",
+        name:name,
+        feedback:feedback
+      })
+    });
+
+    const data = await response.json();
+    alert(data.message || "Feedback Submitted!");
+
+  } catch(error){
+    alert("Error submitting feedback");
+  }
+
+}
+
+</script>
+
+</body>
+</html>
+
+
